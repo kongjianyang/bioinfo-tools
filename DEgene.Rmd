@@ -1,0 +1,135 @@
+---
+title: "DEgene.Rmd"
+author: "Liang Tang"
+date: "2/8/2018"
+output: html_document
+---
+
+install package from bioconductor should use this way 
+
+source("https://bioconductor.org/biocLite.R")
+
+biocLite("edgeR")
+
+
+```{r}
+library(limma)
+library(edgeR)
+setwd("/Volumes/scratch/WholeRNAseq_NutriNet/07DEgene")
+mydata <- read.table("/Volumes/scratch/WholeRNAseq_NutriNet/07DEgene/normalized_counts.txt", header = TRUE, quote = ' ')
+mydata
+group <- factor(c("1","2","2","3","3"))
+y <- DGEList(counts = mydata, group = group)
+keep <- rowSums(cpm(y)>1) >= 2
+y <- y[keep, , keep.lib.sizes=FALSE]
+y
+design <- model.matrix(~group)
+y <- estimateDisp(y, design, robust=TRUE)
+y$common.dispersion
+plotBCV(y)
+fit <- glmQLFit(y, design, robust=TRUE)
+qlf <- glmQLFTest(fit)
+topTags(qlf)
+```
+
+```{r}
+library(limma)
+library(edgeR)
+setwd("/Volumes/scratch/WholeRNAseq_NutriNet/07DEgene")
+mydata <- read.table("/Volumes/scratch/WholeRNAseq_NutriNet/07DEgene/normalized_counts.txt", header = TRUE, quote = ' ')
+mydata
+group <- factor(c("1","2","2","3","3"))
+genotype <- factor(c("hybrid","B73", "B73", "Mo17", "Mo17"))
+nitrogen <- factor(c("HN", "HN", "HN", "LN", "LN"))
+
+design2 <- model.matrix(~genotype*nitrogen)
+
+y <- DGEList(counts = mydata, group = group)
+
+keep <- rowSums(cpm(y)>1) >= 2
+y <- y[keep, , keep.lib.sizes=FALSE]
+y
+y <- estimateDisp(y, design2, robust=TRUE)
+
+View(y$design)
+
+y$common.dispersion
+
+plotBCV(y)
+
+fit <- glmQLFit(y, design2)
+
+qlf <- glmQLFTest(fit)
+```
+
+```{r}
+library(limma)
+library(edgeR)
+setwd("/Volumes/scratch/WholeRNAseq_NutriNet/07DEgene")
+mydata <- read.table("/Volumes/scratch/WholeRNAseq_NutriNet/07DEgene/normalized_counts.txt", header = TRUE, quote = ' ', check.names = FALSE, stringsAsFactors = F, row.names = 1)
+mydata
+group <- factor(c("1","2","2","3","3"))
+y <- DGEList(counts = mydata, group = group)
+keep <- rowSums(cpm(y)>1) >= 2
+y <- y[keep, , keep.lib.sizes=FALSE]
+y
+design <- model.matrix(~group)
+y <- estimateDisp(y, design, robust=TRUE)
+y$common.dispersion
+plotBCV(y)
+fit <- glmQLFit(y, design, robust=TRUE)
+qlf <- glmQLFTest(fit)
+topTags(qlf)
+```
+
+
+```{r}
+library(tidyverse)
+library(EDASeq)
+setwd("/Users/liangtang/OneDrive - purdue.edu/Purdue/Lab/Projects/Week14-15-SemesterSummary/Results")
+all_counts <- read.table("/Users/liangtang/OneDrive - purdue.edu/Purdue/Lab/Projects/Week14-15-SemesterSummary/Results/R1Ear_Mo17xB73_counts.txt", sep = " ", header = T, check.names = FALSE, stringsAsFactors = F, row.names = 1)
+
+all_reads <- as.matrix(all_counts, nrow = nrow(all_counts), ncol = ncol(all_counts))
+all_reads <- newSeqExpressionSet(all_reads, phenoData = AnnotatedDataFrame(data.frame(rname=all_reads[1,])), featureData = AnnotatedDataFrame(data.frame(cname=all_reads[,1])))
+normdata <- betweenLaneNormalization(all_reads, which="upper", offset = F)
+original_counts <- counts(normdata)
+normalized_counts <- normCounts(normdata)
+
+for (i in 1:18){
+  hist(log(normalized_counts[,i]+1))
+}
+hist(log(rowMeans(normalized_counts)+1))
+remove2_normalized_counts <- normalized_counts[which(rowMeans(normalized_counts) > 8),]
+hist(log(remove2_normalized_counts+1))
+hist(log(rowMeans(abs(remove2_normalized_counts))+1))
+
+mode(remove2_normalized_counts) <- "numeric"
+remove2_normalized_counts_log <- log(remove2_normalized_counts+1)
+
+anova_counts_log <- cbind(remove2_normalized_counts_log, nitrogen_p = "NA", genotype_p = "NA", interaction_p = "NA")
+View(anova_counts_log)
+anova_counts_log <- anova_counts_log[, c(1,4:18)]
+View(anova_counts_log)
+anova_counts_log
+mode(anova_counts_log) <- "numeric"
+nitrogen = as.factor(c(rep("LN",1), rep("HN",3), rep("LN",3),rep("LN",3), rep("HN",3),rep("HN",3)))
+genotype = as.factor(c(rep("B73xMo17",1), rep("B73xMo17",3), rep("Mo17",3),rep("B73",3), rep("B73",3),rep("Mo17",3)))
+
+
+library(limma)
+library(edgeR)
+
+group <- factor(c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"))
+y <- DGEList(counts = anova_counts_log, group = group)
+design <- model.matrix(~genotype*nitrogen)
+
+keep <- rowSums(cpm(y)>1) >= 2
+y <- y[keep, , keep.lib.sizes=FALSE]
+
+y <- estimateDisp(y, design, robust=TRUE)
+
+y <- estimateDisp(y, design, robust=TRUE)
+```
+
+
+

@@ -1,0 +1,28 @@
+---
+title: "EDAseq for Normalizing"
+author: "Liang Tang"
+date: "2/8/2018"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(EDASeq)
+setwd("/Volumes/scratch/WholeRNAseq_NutriNet/06Normalizing/")
+counts <- read.table("counts_all.txt", sep = " ", header = T, check.names = FALSE, stringsAsFactors = F, row.names = 1)
+```
+
+
+```{r}
+reads <- as.matrix(counts, nrow = nrow(counts), ncol = ncol(counts))
+reads <- newSeqExpressionSet(reads, phenoData = AnnotatedDataFrame(data.frame(rname=reads[1,])), featureData = AnnotatedDataFrame(data.frame(cname=reads[,1])))
+normdata <- betweenLaneNormalization(reads, which="upper", offset = F)
+original_counts <- counts(normdata)
+normalized_counts <- normCounts(normdata)
+write.table(normalized_counts, file = "/Volumes/scratch/WholeRNAseq_NutriNet/06Normalizing/normalized_counts.txt", quote = F, col.names = T, row.names = T)
+```
+
+
+
+
+
